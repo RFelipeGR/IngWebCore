@@ -1,5 +1,13 @@
 from django import forms
 from .models import Reserva, Bus
+from django import forms
+
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField()
+    password = forms.CharField(widget=forms.PasswordInput())
+
 
 class ReservaForm(forms.ModelForm):
     class Meta:

@@ -3,12 +3,19 @@ from .views import (
     CooperativaListView, CooperativaCreateView,
     BusListView, BusCreateView,
     ReservaListView, ReservaCreateView,
-    buses_por_cooperativa
+    buses_por_cooperativa, login_view, logout_view, panel_home, usuario_home
 )
 from .views import MonitoreoView
 
 
 urlpatterns = [
+    path('login/', login_view, name='login'),
+    path('usuario/', usuario_home, name='usuario_home'),
+    path('', panel_home, name='panel_home'),
+    path('logout/', logout_view, name='logout'),
+
+
+    
     path('cooperativas/', CooperativaListView.as_view(), name='cooperativa_list'),
     path('cooperativas/nuevo/', CooperativaCreateView.as_view(), name='cooperativa_create'),
 

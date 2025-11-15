@@ -6,11 +6,27 @@
 <body>
 
 <nav>
-    <a href="/panel/cooperativas/">Cooperativas</a> |
-    <a href="/panel/buses/">Buses</a> |
-    <a href="/panel/reservas/">Reservas</a> |
-    <a href="/panel/monitoreo/">Monitoreo</a>
+    {% if request.user.is_authenticated %}
+
+        {% if request.user.is_staff %}
+            <!-- NAV DE ADMIN -->
+            <a href="/panel/">Inicio</a> |
+            <a href="/panel/cooperativas/">Cooperativas</a> |
+            <a href="/panel/buses/">Buses</a> |
+            <a href="/panel/reservas/">Reservas</a> |
+            <a href="/panel/monitoreo/">Monitoreo</a> |
+        {% else %}
+            <!-- NAV DE USUARIO NORMAL -->
+            <a href="/panel/usuario/">Inicio Usuario</a> |
+            <a href="/panel/reservas/">Reservas</a> |
+        {% endif %}
+
+        <!-- Cerrar sesión -->
+        <a href="/panel/logout/" style="color:red;">Cerrar Sesión</a>
+
+    {% endif %}
 </nav>
+
 
 <hr>
 
