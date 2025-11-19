@@ -1,0 +1,9 @@
+{% extends "administracion/base_admin.html" %}
+{% block content %}
+<h2>Eliminar bus</h2>
+<p>¿Eliminar el bus {{ bus.placa }} de {{ bus.cooperativa.nombre }}?</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-red" type="submit">Sí, eliminar</button>
+</form>
+{% endblock %}

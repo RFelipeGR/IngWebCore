@@ -1,0 +1,46 @@
+<h1>Panel del Operador - {{ cooperativa.nombre }}</h1>
+
+<p style="text-align:right; margin-bottom:10px;">
+    <a href="{% url 'operador_logout' %}" style="color:red; font-weight:bold;">
+        Cerrar sesión ⎋
+    </a>
+</p>
+
+<table border="1" cellpadding="8">
+    <thead>
+        <tr>
+            <th>Ruta</th>
+            <th>Salida</th>
+            <th>Bus</th>
+            <th>Ocupación</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for h in data %}
+        <tr>
+            <td>{{ h.horario.ruta }}</td>
+            <td>{{ h.horario.hora_salida }}</td>
+            <td>{{ h.horario.bus.placa }}</td>
+
+            <td>{{ h.ocupacion }}% ({{ h.usados }}/{{ h.total }})</td>
+
+            <td>
+                {% if h.estado == 'CRÍTICO' %}
+                    <span style="color:red;">CRÍTICO ✖</span>
+                {% else %}
+                    <span style="color:green;">OK ✔</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{% url 'detalle_reserva' h.horario.id %}">Ver</a> |
+                <a href="{% url 'transferencias' h.horario.id %}">Transferencias</a> |
+                <a href="{% url 'estadisticas_reserva' h.horario.id %}">Estadísticas</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

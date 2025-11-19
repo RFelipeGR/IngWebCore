@@ -1,0 +1,19 @@
+<h2>{% if editar %}Editar Operador{% else %}Nuevo Operador{% endif %}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    {% if editar %}
+        <label>Cooperativa:</label>
+        <select name="cooperativa">
+            {% for c in cooperativas %}
+                <option value="{{ c.id }}" {% if c.id == operador.cooperativa.id %}selected{% endif %}>{{ c.nombre }}</option>
+            {% endfor %}
+        </select>
+    {% else %}
+        {{ form_creacion.as_p }}
+    {% endif %}
+
+    <button type="submit">Guardar</button>
+</form>

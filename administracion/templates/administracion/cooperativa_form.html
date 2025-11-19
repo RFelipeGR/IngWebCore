@@ -1,12 +1,9 @@
-{% extends "administracion/base.html" %}
+{% extends "administracion/base_admin.html" %}
 {% block content %}
-
-<h1>Nueva Cooperativa</h1>
-
+<h2>Cooperativa</h2>
 <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar</button>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn" type="submit">Guardar</button>
 </form>
-
 {% endblock %}

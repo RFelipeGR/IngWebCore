@@ -1,25 +1,27 @@
-{% extends "administracion/base.html" %}
-
+{% extends "administracion/base_admin.html" %}
 {% block content %}
-<h1>Listado de Buses</h1>
+<h2>Buses</h2>
+<a class="btn" href="{% url 'super_bus_create' %}">Nuevo bus</a>
 
-<a href="/panel/buses/nuevo/">Crear Bus</a>
-
-<table border="1">
+<table>
+  <tr>
+    <th>Placa</th>
+    <th>Cooperativa</th>
+    <th>Capacidad</th>
+    <th>Acciones</th>
+  </tr>
+  {% for b in buses %}
     <tr>
-        <th>ID</th>
-        <th>Cooperativa</th>
-        <th>Placa</th>
-        <th>Capacidad</th>
+      <td>{{ b.placa }}</td>
+      <td>{{ b.cooperativa.nombre }}</td>
+      <td>{{ b.capacidad }}</td>
+      <td>
+        <a class="btn" href="{% url 'super_bus_edit' b.pk %}">Editar</a>
+        <a class="btn btn-red" href="{% url 'super_bus_delete' b.pk %}">Eliminar</a>
+      </td>
     </tr>
-
-    {% for bus in object_list %}
-    <tr>
-        <td>{{ bus.id }}</td>
-        <td>{{ bus.cooperativa.nombre }}</td>
-        <td>{{ bus.placa }}</td>
-        <td>{{ bus.capacidad }}</td>
-    </tr>
-    {% endfor %}
+  {% empty %}
+    <tr><td colspan="4">No hay buses registrados.</td></tr>
+  {% endfor %}
 </table>
 {% endblock %}

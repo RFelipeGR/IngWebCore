@@ -1,0 +1,25 @@
+{% extends "administracion/base_admin.html" %}
+{% block content %}
+<h2>Rutas</h2>
+<a class="btn" href="{% url 'super_ruta_create' %}">Nueva ruta</a>
+
+<table>
+  <tr>
+    <th>Origen</th>
+    <th>Destino</th>
+    <th>Acciones</th>
+  </tr>
+  {% for r in rutas %}
+    <tr>
+      <td>{{ r.origen }}</td>
+      <td>{{ r.destino }}</td>
+      <td>
+        <a class="btn" href="{% url 'super_ruta_edit' r.pk %}">Editar</a>
+        <a class="btn btn-red" href="{% url 'super_ruta_delete' r.pk %}">Eliminar</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="3">No hay rutas.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

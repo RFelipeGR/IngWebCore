@@ -1,53 +1,107 @@
 from django import forms
-from .models import Reserva, Bus
-from django import forms
+from django.contrib.auth.models import User
+from .models import Cooperativa, Bus, Ruta, Horario, Operador
 
 
-
-class LoginForm(forms.Form):
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.PasswordInput())
-
-
-class ReservaForm(forms.ModelForm):
+class CooperativaForm(forms.ModelForm):
     class Meta:
-        model = Reserva
-        fields = ['bus', 'pasajero_nombre', 'pasajero_cedula', 'fecha_viaje', 'asiento']
+        model = Cooperativa
+        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email']
 
-    def clean_pasajero_cedula(self):
-        cedula = self.cleaned_data.get('pasajero_cedula')
 
-        # Validación básica: 10 dígitos numéricos
-        if not cedula.isdigit():
-            raise forms.ValidationError("La cédula solo debe contener números.")
-        if len(cedula) != 10:
-            raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos.")
+class BusForm(forms.ModelForm):
+    class Meta:
+        model = Bus
+        fields = ['cooperativa', 'placa', 'capacidad']
 
-        # Aquí podrías implementar el algoritmo de cédula ecuatoriana si quieres más nivel.
 
-        return cedula
+class RutaForm(forms.ModelForm):
+    class Meta:
+        model = Ruta
+        fields = ['origen', 'destino']
+
+
+class HorarioForm(forms.ModelForm):
+    class Meta:
+        model = Horario
+        fields = ['bus', 'ruta', 'hora_salida']
+
+    def save(self, commit=True):
+        horario = super().save(commit=False)
+        horario.capacidad_total = horario.bus.capacidad
+        if commit:
+            horario.save()
+        return horario
+
+
+class OperadorCreateForm(forms.Form):
+    username = forms.CharField(max_length=150)
+    password1 = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+    cooperativa = forms.ModelChoiceField(queryset=Cooperativa.objects.all())
 
     def clean(self):
         cleaned_data = super().clean()
-        bus = cleaned_data.get('bus')
-        asiento = cleaned_data.get('asiento')
-        fecha_viaje = cleaned_data.get('fecha_viaje')
-
-        if bus and asiento and fecha_viaje:
-            # Evitar doble reserva del mismo asiento en el mismo bus y fecha
-            existe = Reserva.objects.filter(
-                bus=bus,
-                asiento=asiento,
-                fecha_viaje=fecha_viaje
-            ).exists()
-            if existe:
-                raise forms.ValidationError(
-                    f"El asiento {asiento} ya está reservado para ese bus y fecha."
-                )
-
-            # Validar que el asiento no supere la capacidad
-            if asiento > bus.capacidad:
-                raise forms.ValidationError(
-                    f"El asiento {asiento} supera la capacidad del bus ({bus.capacidad})."
-                )
+        p1 = cleaned_data.get("password1")
+        p2 = cleaned_data.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
         return cleaned_data
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Ese nombre de usuario ya existe.")
+        return username
+
+    def save(self):
+        username = self.cleaned_data["username"]
+        password = self.cleaned_data["password1"]
+        cooperativa = self.cleaned_data["cooperativa"]
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            is_staff=False,
+            is_superuser=False
+        )
+
+        operador = Operador.objects.create(
+            user=user,
+            cooperativa=cooperativa
+        )
+
+        return user, operador
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(
+        label="Usuario",
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ingresa tu usuario',
+            'class': 'form-control'
+        })
+    )
+    password = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Ingresa tu contraseña',
+            'class': 'form-control'
+        })
+    )
+
+
+# =====================================================
+#   FORMULARIO CORRECTO PARA EDITAR OPERADOR
+# =====================================================
+class OperadorEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username']
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if User.objects.filter(username=username).exclude(id=self.instance.id).exists():
+            raise forms.ValidationError("Ese nombre de usuario ya existe.")
+        return username

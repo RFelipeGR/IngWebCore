@@ -1,0 +1,14 @@
+{% extends "administracion/base_admin.html" %}
+
+{% block content %}
+<h2>Eliminar Operador</h2>
+
+<p>¿Seguro que deseas borrar al operador <strong>{{ operador.user.username }}</strong>?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Sí, eliminar</button>
+</form>
+
+<a href="{% url 'operador_list' %}">Cancelar</a>
+{% endblock %}

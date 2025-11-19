@@ -1,0 +1,14 @@
+{% extends "administracion/base_admin.html" %}
+
+{% block content %}
+<h2>Eliminar Ruta</h2>
+
+<p>¿Seguro que deseas eliminar la ruta <strong>{{ ruta }}</strong>?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Sí, eliminar</button>
+</form>
+
+<a href="{% url 'super_ruta_list' %}">Cancelar</a>
+{% endblock %}

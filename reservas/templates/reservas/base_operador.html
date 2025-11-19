@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Operador - SmartBus</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f7f7f7;
+    }
+    header {
+      background: #003366;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.4rem;
+    }
+    .content {
+      padding: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: white;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #003366;
+      color: white;
+    }
+    .btn {
+      display: inline-block;
+      background: #007bff;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .btn-red {
+      background: #d9534f;
+    }
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 5px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  Panel del Operador de {{ cooperativa.nombre }}
+</header>
+
+<div class="content">
+  {% block content %}
+  {% endblock %}
+</div>
+
+</body>
+</html>

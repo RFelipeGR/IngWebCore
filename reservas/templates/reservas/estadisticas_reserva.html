@@ -1,0 +1,18 @@
+<h1>Estadísticas del Horario</h1>
+
+<p><strong>Ruta:</strong> {{ horario.ruta }}</p>
+<p><strong>Bus:</strong> {{ horario.bus.placa }}</p>
+<p><strong>Salida:</strong> {{ horario.hora_salida }}</p>
+
+<p><strong>Capacidad total:</strong> {{ total }}</p>
+<p><strong>Reservas actuales:</strong> {{ usados }}</p>
+<p><strong>Ocupación:</strong> {{ ocupacion }}%</p>
+
+{% if estado == 'OK' %}
+    <p><strong>ESTADO:</strong> <span style="color:green;">OK ✔</span></p>
+{% else %}
+    <p><strong>ESTADO:</strong> <span style="color:red;">CRÍTICO ⚠</span></p>
+{% endif %}
+
+<br>
+<a href="{% url 'panel_operador' %}">⬅ Volver</a>

@@ -1,0 +1,33 @@
+{% extends "administracion/base_admin.html" %}
+{% block content %}
+<h2>Horarios</h2>
+<a class="btn" href="{% url 'super_horario_create' %}">Nuevo horario</a>
+
+<table>
+  <tr>
+    <th>Bus</th>
+    <th>Cooperativa</th>
+    <th>Ruta</th>
+    <th>Hora salida</th>
+    <th>Capacidad</th>
+    <th>Pasajeros actuales</th>
+    <th>Acciones</th>
+  </tr>
+  {% for h in horarios %}
+    <tr>
+      <td>{{ h.bus.placa }}</td>
+      <td>{{ h.bus.cooperativa.nombre }}</td>
+      <td>{{ h.ruta.origen }} → {{ h.ruta.destino }}</td>
+      <td>{{ h.hora_salida }}</td>
+      <td>{{ h.capacidad_total }}</td>
+      <td>{{ h.pasajeros_actuales }}</td>
+      <td>
+        <a class="btn" href="{% url 'super_horario_edit' h.pk %}">Editar</a>
+        <a class="btn btn-red" href="{% url 'super_horario_delete' h.pk %}">Eliminar</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7">No hay horarios.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

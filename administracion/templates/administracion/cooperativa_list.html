@@ -1,26 +1,38 @@
-{% extends "administracion/base.html" %}
+{% extends "administracion/base_admin.html" %}
+
 {% block content %}
+<h2>Cooperativas Registradas</h2>
 
-<h1>Cooperativas</h1>
+<a href="{% url 'super_cooperativa_create' %}" class="btn btn-primary">Nueva Cooperativa</a>
 
-<a href="/panel/cooperativas/nuevo/">Crear Cooperativa</a>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>RUC</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
 
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>RUC</th>
-        <th>Correo</th>
-    </tr>
+    <tbody>
+        {% for c in cooperativas %}
+        <tr>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.ruc }}</td>
+            <td>{{ c.direccion }}</td>
+            <td>{{ c.telefono }}</td>
+            <td>{{ c.email }}</td>
 
-    {% for c in object_list %}
-    <tr>
-        <td>{{ c.id }}</td>
-        <td>{{ c.nombre }}</td>
-        <td>{{ c.ruc }}</td>
-        <td>{{ c.correo }}</td>
-    </tr>
-    {% endfor %}
+            <td>
+                <a href="{% url 'super_cooperativa_edit' c.id %}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'super_cooperativa_delete' c.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

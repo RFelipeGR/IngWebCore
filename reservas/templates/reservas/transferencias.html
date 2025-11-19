@@ -1,0 +1,28 @@
+<h1>Transferencias - {{ horario.ruta }}</h1>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <h3>Seleccione pasajeros a mover:</h3>
+    {% for r in reservas %}
+        <label>
+            <input type="checkbox" name="reservas" value="{{ r.id }}">
+            {{ r.nombre_pasajero }} - Asiento {{ r.asiento }}
+        </label><br>
+    {% endfor %}
+
+    <h3>Seleccionar horario destino:</h3>
+    <select name="destino" required>
+        {% for h in opciones %}
+            <option value="{{ h.id }}">
+                {{ h.hora_salida }} - Bus {{ h.bus.placa }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <br><br>
+    <button type="submit">Ejecutar Transferencia</button>
+</form>
+
+<br>
+<a href="{% url 'panel_operador' %}">⬅ Volver</a>

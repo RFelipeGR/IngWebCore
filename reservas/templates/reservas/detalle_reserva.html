@@ -1,0 +1,16 @@
+<h1>Detalle de Reservas - {{ horario.ruta }}</h1>
+<p><strong>Bus:</strong> {{ horario.bus.placa }}</p>
+<p><strong>Salida:</strong> {{ horario.hora_salida }}</p>
+<table border="1" cellpadding="8">
+    <tr>
+        <th>Pasajero</th>
+        <th>Cédula</th>
+        <th>Asiento</th>
+    </tr> {% for r in reservas %} <tr>
+        <td>{{ r.nombre_pasajero }}</td>
+        <td>{{ r.cedula }}</td>
+        <td>{{ r.asiento }}</td>
+    </tr> {% endfor %}
+</table> <br> <a href="{% url 'transferencias' horario.id %}">Transferencias</a> <a
+    href="{% url 'estadisticas_reserva' horario.id %}">Estadísticas</a> <a href="{% url 'panel_operador' %}">⬅
+    Volver</a>

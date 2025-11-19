@@ -19,11 +19,11 @@ from django.urls import path, include
 from django.http import HttpResponseRedirect
 
 def redirect_to_login(request):
-    return HttpResponseRedirect('/panel/login/')
+    return HttpResponseRedirect('/login/')
 
 urlpatterns = [
     path('', redirect_to_login), 
-    path('admin/', admin.site.urls),          # Django admin
-    path('panel/', include('administracion.urls')),  # Tu admin MVC
+    path('admin/', admin.site.urls),
+    path('panel/operador/', include('reservas.urls')),
+    path('', include('administracion.urls')),
 ]
-

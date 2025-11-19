@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Superadmin - SmartBus</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f6f6; }
+    header { background: #222; color: #fff; padding: 1rem; }
+    nav a { margin-right: 1rem; color: #fff; text-decoration: none; }
+    .content { padding: 2rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; }
+    th { background: #333; color: #fff; }
+    .btn { display: inline-block; padding: 6px 12px; background: #007bff; color: #fff; text-decoration: none; border-radius: 4px; }
+    .btn-red { background: #d9534f; }
+  </style>
+</head>
+<body>
+<header>
+  <strong>SmartBus - Panel Superadmin</strong>
+<nav>
+    <a href="{% url 'panel_admin' %}">Inicio</a>
+    <a href="{% url 'super_cooperativa_list' %}">Cooperativas</a>
+    <a href="{% url 'super_bus_list' %}">Buses</a>
+    <a href="{% url 'super_ruta_list' %}">Rutas</a>
+    <a href="{% url 'super_horario_list' %}">Horarios</a>
+    <a href="{% url 'operador_list' %}">Operadores</a>
+    <a href="{% url 'logout' %}">Cerrar sesión</a>
+</nav>
+</header>
+
+<div class="content">
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>

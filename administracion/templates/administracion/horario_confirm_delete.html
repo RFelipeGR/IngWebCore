@@ -1,0 +1,14 @@
+{% extends "administracion/base_admin.html" %}
+
+{% block content %}
+<h2>Eliminar Horario</h2>
+
+<p>¿Seguro que deseas eliminar el horario <strong>{{ horario }}</strong>?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Sí, eliminar</button>
+</form>
+
+<a href="{% url 'super_horario_list' %}">Cancelar</a>
+{% endblock %}

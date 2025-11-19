@@ -1,0 +1,11 @@
+<h1>Transferencia realizada con éxito</h1>
+
+<p>Los pasajeros fueron movidos al horario:</p>
+
+<p>
+    Ruta: {{ destino.ruta }} <br>
+    Bus: {{ destino.bus.placa }} <br>
+    Salida: {{ destino.hora_salida }}
+</p>
+
+<a href="{% url 'panel_operador' %}">Volver al panel</a>

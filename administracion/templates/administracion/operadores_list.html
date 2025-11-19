@@ -1,0 +1,26 @@
+{% extends "administracion/base_admin.html" %}
+
+{% block content %}
+<h2>Operadores</h2>
+
+<a href="{% url 'operador_create' %}">➕ Nuevo Operador</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Usuario</th>
+        <th>Cooperativa</th>
+        <th>Acciones</th>
+    </tr>
+
+    {% for op in operadores %}
+    <tr>
+        <td>{{ op.user.username }}</td>
+        <td>{{ op.cooperativa.nombre }}</td>
+        <td>
+            <a href="{% url 'operador_edit' op.id %}">Editar</a> |
+            <a href="{% url 'operador_delete' op.id %}">Eliminar</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
