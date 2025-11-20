@@ -16,4 +16,12 @@ urlpatterns = [
     
         # 🔥 NUEVO
     path('logout/', views.operador_logout, name='operador_logout'),
+    
+    path('negociacion/', views.negociacion, name='negociacion'),
+    
+    path('negociacion/<int:id>/aceptar/', views.aceptar_negociacion, name='aceptar_negociacion'),
+    
+    path('negociacion/<int:id>/rechazar/', views.rechazar_negociacion, name='rechazar_negociacion'),
+
+
 ]

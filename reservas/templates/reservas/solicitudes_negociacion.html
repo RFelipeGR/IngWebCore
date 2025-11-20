@@ -1,0 +1,14 @@
+<h1>Solicitudes de negociación</h1>
+
+{% for n in solicitudes %}
+    <div style="border:1px solid black; padding:10px; margin-bottom:10px;">
+        <p><strong>Origen:</strong> {{ n.origen.bus.cooperativa.nombre }}</p>
+        <p><strong>Destino:</strong> {{ n.destino.bus.cooperativa.nombre }}</p>
+        <p><strong>Pasajeros:</strong> {{ n.reservas|length }}</p>
+        <p><strong>Oferta inicial:</strong> ${{ n.propuesta_origen }}</p>
+
+        <a href="{% url 'responder_negociacion' n.id %}">Ver / Responder</a>
+    </div>
+{% empty %}
+    <p>No hay negociaciones pendientes.</p>
+{% endfor %}

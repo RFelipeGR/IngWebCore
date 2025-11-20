@@ -6,23 +6,123 @@
     <h3>Seleccione pasajeros a mover:</h3>
     {% for r in reservas %}
         <label>
-            <input type="checkbox" name="reservas" value="{{ r.id }}">
+            <input type="checkbox" name="reservas" value="{{ r.id }}" class="pasajeroCheck">
             {{ r.nombre_pasajero }} - Asiento {{ r.asiento }}
         </label><br>
     {% endfor %}
 
     <h3>Seleccionar horario destino:</h3>
-    <select name="destino" required>
+    <select name="destino" id="destinoSelect" required>
+        <option value="">Seleccione...</option>
         {% for h in opciones %}
-            <option value="{{ h.id }}">
-                {{ h.hora_salida }} - Bus {{ h.bus.placa }}
+            <option value="{{ h.id }}" data-coop="{{ h.bus.cooperativa.id }}">
+                {{ h.hora_salida }} - Bus {{ h.bus.placa }} ({{ h.bus.cooperativa.nombre }})
             </option>
         {% endfor %}
     </select>
 
-    <br><br>
-    <button type="submit">Ejecutar Transferencia</button>
+    <!-- SECCIÓN ECONÓMICA DINÁMICA -->
+    <div id="negociacionBox" style="display:none; margin-top:20px; border:1px solid #ccc; padding:10px;">
+        <h3>Propuesta económica</h3>
+
+        <label>Costo por pasajero ($):</label><br>
+        <input type="number" step="0.01" id="costoInput" name="costo_por_pasajero" value="3.50"><br><br>
+
+        <label>Comentario:</label><br>
+        <textarea name="comentario_origen" rows="3"></textarea>
+
+        <hr>
+
+        <h3>📊 Análisis económico de la transferencia</h3>
+
+        <table border="1" cellpadding="6" style="width:100%; text-align:center;">
+            <thead>
+                <tr>
+                    <th>Indicador</th>
+                    <th>Origen (A)</th>
+                    <th>Destino (B)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Pasajeros</td>
+                    <td id="pasA">0</td>
+                    <td id="pasB">0</td>
+                </tr>
+                <tr>
+                    <td>Ingreso total</td>
+                    <td id="ingresoA">$0.00</td>
+                    <td id="ingresoB">$0.00</td>
+                </tr>
+                <tr>
+                    <td>Costo operativo</td>
+                    <td>—</td>
+                    <td id="costoB">$0.00</td>
+                </tr>
+                <tr>
+                    <td>Gasto administrativo</td>
+                    <td id="adminA">$0.00</td>
+                    <td>—</td>
+                </tr>
+                <tr>
+                    <td>Comisión (5%)</td>
+                    <td id="comisionA">$0.00</td>
+                    <td>—</td>
+                </tr>
+                <tr style="background:#eef;">
+                    <td><strong>Ganancia neta</strong></td>
+                    <td id="gananciaA"><strong>$0.00</strong></td>
+                    <td id="gananciaB"><strong>$0.00</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <br>
+    <button type="submit">Enviar</button>
 </form>
+
+<script>
+const select = document.getElementById("destinoSelect");
+const box = document.getElementById("negociacionBox");
+const checkboxes = document.querySelectorAll(".pasajeroCheck");
+const costoInput = document.getElementById("costoInput");
+
+function calcularEconomia() {
+    let n = document.querySelectorAll(".pasajeroCheck:checked").length;
+    let costo = parseFloat(costoInput.value);
+
+    let costo_operativo = 1.20 * n;
+    let admin = 0.30 * n;
+    let ingreso = costo * n;
+    let comision = ingreso * 0.05;
+
+    document.getElementById("pasA").textContent = n;
+    document.getElementById("pasB").textContent = n;
+    document.getElementById("ingresoA").textContent = "$" + ingreso.toFixed(2);
+    document.getElementById("ingresoB").textContent = "$" + ingreso.toFixed(2);
+    document.getElementById("costoB").textContent = "$" + costo_operativo.toFixed(2);
+    document.getElementById("adminA").textContent = "$" + admin.toFixed(2);
+    document.getElementById("comisionA").textContent = "$" + comision.toFixed(2);
+
+    let gan_A = ingreso - admin - comision;
+    let gan_B = ingreso - costo_operativo;
+
+    document.getElementById("gananciaA").textContent = "$" + gan_A.toFixed(2);
+    document.getElementById("gananciaB").textContent = "$" + gan_B.toFixed(2);
+}
+
+checkboxes.forEach(cb => cb.addEventListener("change", calcularEconomia));
+costoInput.addEventListener("input", calcularEconomia);
+
+select.addEventListener("change", function() {
+    const coopDestino = this.options[this.selectedIndex].dataset.coop;
+    const coopOrigen = "{{ horario.bus.cooperativa.id }}";
+
+    box.style.display = (coopDestino !== coopOrigen) ? "block" : "none";
+    calcularEconomia();
+});
+</script>
 
 <br>
 <a href="{% url 'panel_operador' %}">⬅ Volver</a>

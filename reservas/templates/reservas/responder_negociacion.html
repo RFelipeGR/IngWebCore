@@ -1,0 +1,21 @@
+<h1>Responder Negociación</h1>
+
+<p><strong>Origen:</strong> {{ nego.origen.bus.cooperativa.nombre }}</p>
+<p><strong>Destino:</strong> {{ nego.destino.bus.cooperativa.nombre }}</p>
+<p><strong>Oferta origen:</strong> ${{ nego.propuesta_origen }}</p>
+
+{% if nego.propuesta_destino %}
+<p><strong>Tu contraoferta:</strong> ${{ nego.propuesta_destino }}</p>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <button name="aceptar" style="background:green;color:white;padding:10px;">Aceptar</button>
+
+    <hr>
+
+    <label>Hacer contraoferta:</label>
+    <input type="number" step="0.01" name="oferta">
+    <button name="contraoferta" style="background:orange;color:white;padding:10px;">Enviar contraoferta</button>
+</form>

@@ -1,55 +1,113 @@
+# Django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.contrib import messages
+
+# Models
+from administracion.models import Operador, Horario
+from reservas.models import Reserva, Negociacion
+
+# Servicios
+from core.services import (
+    buscar_opciones_transferencia,
+    ejecutar_transferencia,
+    calcular_costos_negociacion,
+    calcular_ocupacion,
+    cumple_umbral,
+)
+
+# Otros
+from django.http import HttpResponse
+
+
+
+# -----------------------------------------------------------
+# 📌 IMPORTS LIMPIOS
+# -----------------------------------------------------------
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.contrib import messages
 
 from administracion.models import Operador, Horario
-from reservas.models import Reserva
-from core.services import cumple_umbral, buscar_opciones_transferencia, ejecutar_transferencia
-from core.services import cumple_umbral, buscar_opciones_transferencia
-from reservas.services import generar_reservas_dummy
+from reservas.models import Reserva, Negociacion
 
-from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404
-from administracion.models import Horario
-from reservas.models import Reserva
-from core.services import cumple_umbral, buscar_opciones_transferencia, ejecutar_transferencia
+from core.services import (
+    buscar_opciones_transferencia,
+    ejecutar_transferencia,
+    calcular_ocupacion,
+    calcular_costos_negociacion,
+    cumple_umbral,
+)
 
-from core.services import calcular_ocupacion, cumple_umbral
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-
-
-
-
-
+# -----------------------------------------------------------
+# 📌 PANEL PRINCIPAL DEL OPERADOR
+# -----------------------------------------------------------
 
 @login_required
 def panel_operador(request):
-    operador = Operador.objects.get(user=request.user)
-    cooperativa = operador.cooperativa
+    try:
+        operador = Operador.objects.get(user=request.user)
+    except Operador.DoesNotExist:
+        return redirect("login")
 
+    cooperativa = operador.cooperativa
     horarios = Horario.objects.filter(bus__cooperativa=cooperativa)
 
     data = []
     for h in horarios:
-        ocupacion, usados, total = calcular_ocupacion(h)
-        cumple = cumple_umbral(h)   # ← ahora True = OK
-
-        estado = "OK" if cumple else "CRÍTICO"
+        ocupacion, usados, capacidad = calcular_ocupacion(h)
+        estado = "OK" if cumple_umbral(h) else "CRÍTICO"
 
         data.append({
             "horario": h,
-            "ocupacion": round(ocupacion, 2),
             "usados": usados,
-            "total": total,
+            "libres": capacidad - usados,
+            "total": capacidad,
+            "ocupacion": round(ocupacion, 2),
             "estado": estado,
+        })
+
+    solicitudes = Negociacion.objects.filter(
+        destino__bus__cooperativa=cooperativa,
+        estado="PENDIENTE"
+    )
+
+    solicitudes_detalladas = []
+    for n in solicitudes:
+        cantidad = len(n.reservas)
+        precio = n.costo_por_pasajero
+        total_ingreso = cantidad * precio
+        costo_destino = cantidad * n.costo_operativo_destino
+
+        gastos_admin = total_ingreso * 0.05
+        comision = total_ingreso * 0.08
+
+        solicitudes_detalladas.append({
+            "obj": n,
+            "cantidad": cantidad,
+            "precio": precio,
+            "total_origen": round(total_ingreso, 2),
+            "costo_operativo_destino": round(costo_destino, 2),
+            "ganancia_destino": round(total_ingreso - costo_destino, 2),
+            "gastos_admin": round(gastos_admin, 2),
+            "comision_sistema": round(comision, 2),
+            "margen_origen": round(total_ingreso - gastos_admin - comision, 2),
+            "margen_destino": round((total_ingreso - costo_destino) - gastos_admin, 2),
         })
 
     return render(request, "reservas/panel_operador.html", {
         "cooperativa": cooperativa,
         "data": data,
+        "solicitudes": solicitudes_detalladas,
     })
 
-
+# -----------------------------------------------------------
+# 📌 TRANSFERENCIAS INTERNAS
+# -----------------------------------------------------------
 
 @login_required
 def iniciar_negociacion(request, reserva_id):
@@ -86,59 +144,65 @@ def transferir_pasajeros(request, reserva_id, horario_id):
         ejecutar_transferencia(reserva, horario_destino, cantidad)
         return render(request, "reservas/transferencia_exitosa.html")
 
-    # Acceso sin POST → volver al panel
     return redirect('panel_operador')
 
+
+@login_required
+def transferencias(request, id):
+    origen = get_object_or_404(Horario, id=id)
+    reservas = Reserva.objects.filter(horario=origen).order_by("asiento")
+
+    opciones = Horario.objects.filter(ruta=origen.ruta).exclude(id=origen.id)
+
+    if request.method == "POST":
+        seleccionados = request.POST.getlist("reservas")
+        destino = get_object_or_404(Horario, id=request.POST.get("destino"))
+
+        if origen.bus.cooperativa == destino.bus.cooperativa:
+            reservas_objs = Reserva.objects.filter(id__in=seleccionados)
+            for r in reservas_objs:
+                r.horario = destino
+                r.save()
+            return redirect("panel_operador")
+
+        Negociacion.objects.create(
+            origen=origen,
+            destino=destino,
+            reservas=seleccionados,
+            costo_por_pasajero=float(request.POST.get("costo_por_pasajero")),
+            comentario_origen=request.POST.get("comentario_origen", ""),
+            estado="PENDIENTE",
+        )
+
+        return redirect("panel_operador")
+
+    return render(request, "reservas/transferencias.html", {
+        "horario": origen,
+        "reservas": reservas,
+        "opciones": opciones,
+    })
+
+# -----------------------------------------------------------
+# 📌 DETALLES Y ESTADÍSTICAS
+# -----------------------------------------------------------
 
 @login_required
 def detalle_reserva(request, id):
     horario = get_object_or_404(Horario, id=id)
     reservas = Reserva.objects.filter(horario=horario).order_by("asiento")
 
-    contexto = {
+    return render(request, "reservas/detalle_reserva.html", {
         "horario": horario,
         "reservas": reservas,
-    }
-    return render(request, "reservas/detalle_reserva.html", contexto)
-
-
-@login_required
-def transferencias(request, id):
-    horario_actual = get_object_or_404(Horario, id=id)
-
-    opciones = buscar_opciones_transferencia(horario_actual)
-    reservas = Reserva.objects.filter(horario=horario_actual).order_by("asiento")
-
-    if request.method == "POST":
-        destino_id = request.POST.get("destino")
-        seleccionados = request.POST.getlist("reservas")
-
-        horario_destino = get_object_or_404(Horario, id=destino_id)
-        reservas_obj = Reserva.objects.filter(id__in=seleccionados)
-
-        ejecutar_transferencia(reservas_obj, horario_destino)
-
-        return render(request, "reservas/transferencia_exitosa.html", {
-            "destino": horario_destino
-        })
-
-    return render(request, "reservas/transferencias.html", {
-        "horario": horario_actual,
-        "opciones": opciones,
-        "reservas": reservas
     })
-
 
 
 @login_required
 def estadisticas_reserva(request, id):
     horario = get_object_or_404(Horario, id=id)
 
-    # Cálculo con la lógica del core
     ocupacion, usados, total = calcular_ocupacion(horario)
-    cumple = cumple_umbral(horario)  # True = OK, False = CRÍTICO
-
-    estado = "OK" if cumple else "CRÍTICO"
+    estado = "OK" if cumple_umbral(horario) else "CRÍTICO"
 
     return render(request, "reservas/estadisticas_reserva.html", {
         "horario": horario,
@@ -148,8 +212,115 @@ def estadisticas_reserva(request, id):
         "estado": estado,
     })
 
+# -----------------------------------------------------------
+# 📌 NEGOCIACIONES ENTRE COOPERATIVAS
+# -----------------------------------------------------------
 
+def negociacion(request):
+    data = request.session.get("transferencia")
+    if not data:
+        return redirect("panel_operador")
+
+    origen = Horario.objects.get(id=data["origen"])
+    destino = Horario.objects.get(id=data["destino"])
+    cantidad = len(data["reservas"])
+
+    costo_promedio = 3.5
+    costo_oper_dest = 1.2 * cantidad
+    compensacion = costo_promedio * cantidad
+    ganancia_dest = compensacion - costo_oper_dest
+
+    if request.method == "POST":
+        ejecutar_transferencia(
+            Reserva.objects.filter(id__in=data["reservas"]),
+            destino
+        )
+        del request.session["transferencia"]
+        return redirect("panel_operador")
+
+    return render(request, "reservas/negociacion.html", {
+        "origen": origen,
+        "destino": destino,
+        "cantidad": cantidad,
+        "costo_promedio": costo_promedio,
+        "compensacion_minima": compensacion,
+        "costo_operativo_destino": costo_oper_dest,
+        "ganancia_neta_destino": ganancia_dest,
+    })
+
+
+def solicitudes_negociacion(request):
+    coop = request.user.operador.cooperativa
+    solicitudes = Negociacion.objects.filter(
+        destino__bus__cooperativa=coop,
+        estado="PENDIENTE"
+    )
+    return render(request, "reservas/solicitudes_negociacion.html", {
+        "solicitudes": solicitudes
+    })
+
+
+def responder_negociacion(request, id):
+    nego = get_object_or_404(Negociacion, id=id)
+
+    if request.method == "POST":
+        if "aceptar" in request.POST:
+            ejecutar_transferencia(
+                Reserva.objects.filter(id__in=nego.reservas),
+                nego.destino
+            )
+            nego.estado = "ACEPTADA"
+            nego.save()
+            return redirect("solicitudes_negociacion")
+
+        if "contraoferta" in request.POST:
+            nego.propuesta_destino = float(request.POST["oferta"])
+            nego.estado = "CONTRAOFERTA"
+            nego.creada_por = "DESTINO"
+            nego.save()
+            return redirect("solicitudes_negociacion")
+
+    return render(request, "reservas/responder_negociacion.html", {"nego": nego})
+
+
+def aceptar_negociacion(request, id):
+    negociacion = get_object_or_404(Negociacion, id=id)
+    reservas = Reserva.objects.filter(id__in=negociacion.reservas)
+
+    for r in reservas:
+        r.horario = negociacion.destino
+        r.save()
+
+    negociacion.estado = "ACEPTADA"
+    negociacion.save()
+
+    return redirect("panel_operador")
+
+
+def rechazar_negociacion(request, id):
+    negociacion = get_object_or_404(Negociacion, id=id)
+    negociacion.estado = "RECHAZADA"
+    negociacion.comentario_destino = "Se rechazó la oferta."
+    negociacion.save()
+    return redirect("panel_operador")
+
+
+def negociar(request, id):
+    nego = get_object_or_404(Negociacion, id=id)
+    total = len(nego.reservas)
+    ingreso = nego.costo_por_pasajero * total
+    costo = nego.costo_operativo_destino * total
+
+    return render(request, "reservas/negociacion_detalle.html", {
+        "neg": nego,
+        "ingreso_b": round(ingreso, 2),
+        "ganancia_b": round(ingreso - costo, 2),
+    })
+
+# -----------------------------------------------------------
+# 📌 LOGOUT
+# -----------------------------------------------------------
 
 def operador_logout(request):
     logout(request)
-    return redirect('login')   # Ajusta si tu login tiene otro nombre
+    return redirect('login')

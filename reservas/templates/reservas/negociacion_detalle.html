@@ -1,0 +1,33 @@
+<h1>Negociación recibida</h1>
+
+<p><strong>Pasajeros:</strong> {{ neg.pasajeros }}</p>
+<p><strong>Costo propuesto por A:</strong> ${{ neg.costo_por_pasajero }}</p>
+
+<p><strong>Ingresos totales para B:</strong> ${{ ingreso_b }}</p>
+<p><strong>Costo operativo B:</strong> ${{ neg.costo_operativo_destino }}</p>
+
+<p><strong>Ganancia neta B:</strong> ${{ ganancia_b }}</p>
+
+<form method="post" action="{% url 'aceptar_negociacion' neg.id %}">
+    {% csrf_token %}
+    <button style="background:green; color:white;">Aceptar</button>
+</form>
+
+<form method="post" action="{% url 'contraoferta' neg.id %}">
+    {% csrf_token %}
+
+    <h3>Hacer contraoferta</h3>
+
+    <label>Proponer nuevo costo por pasajero:</label>
+    <input type="number" step="0.01" name="costo_por_pasajero" value="{{ neg.costo_por_pasajero }}">
+
+    <label>Comentario:</label><br>
+    <textarea name="comentario_destino"></textarea>
+
+    <button style="background:orange;">Enviar contraoferta</button>
+</form>
+
+<form method="post" action="{% url 'rechazar_negociacion' neg.id %}">
+    {% csrf_token %}
+    <button style="background:red; color:white;">Rechazar</button>
+</form>

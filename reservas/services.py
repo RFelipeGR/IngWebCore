@@ -5,45 +5,57 @@ from reservas.models import Reserva
 
 def generar_reservas_dummy():
     """
-    Genera 20 reservas automáticas por cada horario.
-    Solo si ese horario no tiene reservas aún.
+    Genera reservas dummy SIN duplicar asientos ni pasajeros.
+    Solo crea reservas donde faltan.
     """
     horarios = Horario.objects.all()
 
     for h in horarios:
 
-        # Evitar duplicados
-        if Reserva.objects.filter(horario=h).exists():
+        capacidad = h.bus.capacidad
+
+        # Asientos ya ocupados (evita duplicados)
+        asientos_ocupados = set(
+            Reserva.objects.filter(horario=h)
+            .values_list("asiento", flat=True)
+        )
+
+        # Crear máximo 20 o lo que falte
+        faltantes = capacidad - len(asientos_ocupados)
+        crear = min(20, faltantes)
+
+        # Si ya no hay espacio, saltar
+        if crear <= 0:
             continue
 
-        capacidad = h.bus.capacidad  # ← AHORA VIENE DEL BUS
+        # Generar nuevos pasajeros en los asientos disponibles
+        siguiente_asiento = 1
 
-        # Generar 20 reservas dummy o tantas como permita la capacidad
-        num_reservas = min(20, capacidad)
+        for _ in range(crear):
 
-        for i in range(num_reservas):
-            nombre = f"Pasajero {i+1}"
+            # Buscar siguiente asiento libre
+            while siguiente_asiento in asientos_ocupados:
+                siguiente_asiento += 1
+
+            # Generar pasajero único
+            nombre = f"Pasajero {random.randint(1000, 9999)}"
             cedula = f"{random.randint(1000000000, 9999999999)}"
-            asiento = i + 1  # así evitamos duplicados
 
             Reserva.objects.create(
                 horario=h,
                 nombre_pasajero=nombre,
                 cedula=cedula,
-                asiento=asiento
+                asiento=siguiente_asiento
             )
 
-
-
-
+            # Marcar asiento como ocupado
+            asientos_ocupados.add(siguiente_asiento)
 
 
 def generar_reservas_para_un_horario(horario_id, cantidad):
     """
-    Genera 'cantidad' de reservas para un horario específico.
-    No borra reservas existentes; solo agrega nuevas.
+    Genera reservas adicionales sin duplicar asientos ni sobrescribir datos.
     """
-
 
     try:
         horario = Horario.objects.get(id=horario_id)
@@ -51,26 +63,59 @@ def generar_reservas_para_un_horario(horario_id, cantidad):
         return f"❌ El horario con ID {horario_id} no existe."
 
     capacidad = horario.bus.capacidad
-    reservas_existentes = Reserva.objects.filter(horario=horario).count()
 
-    disponibles = capacidad - reservas_existentes
-    if disponibles <= 0:
+    asientos_ocupados = set(
+        Reserva.objects.filter(horario=horario)
+        .values_list("asiento", flat=True)
+    )
+
+    disponibles = capacidad - len(asientos_ocupados)
+    crear = min(cantidad, disponibles)
+
+    if crear <= 0:
         return "⚠ No hay asientos disponibles."
 
-    cantidad_real = min(cantidad, disponibles)
+    siguiente_asiento = 1
 
-    inicio_asiento = reservas_existentes + 1
+    for _ in range(crear):
 
-    for i in range(cantidad_real):
-        nombre = f"Pasajero Extra {i+1}"
+        while siguiente_asiento in asientos_ocupados:
+            siguiente_asiento += 1
+
+        nombre = f"Pasajero Extra {random.randint(1000, 9999)}"
         cedula = f"{random.randint(1000000000, 9999999999)}"
-        asiento = inicio_asiento + i
 
         Reserva.objects.create(
             horario=horario,
             nombre_pasajero=nombre,
             cedula=cedula,
-            asiento=asiento
+            asiento=siguiente_asiento
         )
 
-    return f"✔ Se agregaron {cantidad_real} reservas al horario {horario_id}."
+        asientos_ocupados.add(siguiente_asiento)
+
+    return f"✔ Se agregaron {crear} reservas al horario {horario_id}."
+
+
+
+
+def asignar_asiento_libre(horario):
+    """
+    Retorna el primer asiento libre en un horario.
+    Si no hay asientos disponibles → retorna None.
+    """
+
+    capacidad = horario.bus.capacidad
+
+    # Asientos ocupados
+    ocupados = set(
+        Reserva.objects.filter(horario=horario)
+        .values_list("asiento", flat=True)
+    )
+
+    # Buscar el primer asiento libre
+    for num in range(1, capacidad + 1):
+        if num not in ocupados:
+            return num
+
+    return None  # Bus lleno

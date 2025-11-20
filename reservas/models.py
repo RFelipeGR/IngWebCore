@@ -9,3 +9,30 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"{self.nombre_pasajero} - Asiento {self.asiento}"
+
+
+
+class Negociacion(models.Model):
+    origen = models.ForeignKey(Horario, related_name='neg_origen', on_delete=models.CASCADE)
+    destino = models.ForeignKey(Horario, related_name='neg_destino', on_delete=models.CASCADE)
+
+    reservas = models.JSONField()  # IDs de reservas involucradas
+
+    # Valores enviados por la COOPERATIVA origen
+    costo_por_pasajero = models.FloatField()
+    comentario_origen = models.TextField(blank=True)
+
+    # Respuesta de la COOPERATIVA destino
+    costo_operativo_destino = models.FloatField(default=1.5)
+    compensacion_minima = models.FloatField(default=3.0)
+    comentario_destino = models.TextField(blank=True)
+
+    # Estado
+    estado = models.CharField(max_length=20, default='PROPUESTA')  
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    # Campo cuando ya se cierra
+    precio_final = models.FloatField(null=True, blank=True)
+
+    def pasajeros(self):
+        return len(self.reservas)

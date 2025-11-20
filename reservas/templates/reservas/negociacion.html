@@ -1,0 +1,24 @@
+<h1>Negociación entre Cooperativas</h1>
+
+<p><strong>Origen:</strong> {{ origen.bus.cooperativa.nombre }}</p>
+<p><strong>Destino:</strong> {{ destino.bus.cooperativa.nombre }}</p>
+
+<hr>
+
+<p><strong>Pasajeros a transferir:</strong> {{ cantidad }}</p>
+<p><strong>Costo promedio por pasajero:</strong> ${{ costo_promedio }}</p>
+<p><strong>Compensación mínima esperada:</strong> ${{ compensacion_minima }}</p>
+<p><strong>Costo operativo destino:</strong> ${{ costo_operativo_destino }}</p>
+<p><strong>Ganancia neta para cooperativa destino:</strong> ${{ ganancia_neta_destino }}</p>
+
+<hr>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" style="padding: 10px; background: green; color: white; font-size: 18px;">
+        ✔ Aceptar negociación y ejecutar transferencia
+    </button>
+</form>
+
+<br>
+<a href="{% url 'panel_operador' %}">Cancelar</a>

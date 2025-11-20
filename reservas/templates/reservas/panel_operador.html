@@ -13,6 +13,7 @@
             <th>Salida</th>
             <th>Bus</th>
             <th>Ocupación</th>
+            <th>Libres</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -26,6 +27,7 @@
             <td>{{ h.horario.bus.placa }}</td>
 
             <td>{{ h.ocupacion }}% ({{ h.usados }}/{{ h.total }})</td>
+            <td>{{ h.libres }}</td>
 
             <td>
                 {% if h.estado == 'CRÍTICO' %}
@@ -44,3 +46,86 @@
         {% endfor %}
     </tbody>
 </table>
+
+<hr>
+
+<h2>Solicitudes de negociación pendientes</h2>
+
+{% if solicitudes %}
+    {% for s in solicitudes %}
+        <div style="border:2px solid #bbb; padding:15px; margin:15px 0; border-radius:8px;">
+
+            <h3>🔄 Solicitud de transferencia</h3>
+
+            <p><strong>De la cooperativa:</strong> {{ s.obj.origen.bus.cooperativa.nombre }}</p>
+
+            <p><strong>Ruta:</strong>
+                {{ s.obj.origen.ruta.origen }} → {{ s.obj.origen.ruta.destino }}
+            </p>
+
+            <p><strong>Bus origen:</strong>
+                {{ s.obj.origen.bus.placa }} (Salida: {{ s.obj.origen.hora_salida }})
+            </p>
+
+            <p><strong>Bus destino:</strong>
+                {{ s.obj.destino.bus.placa }} (Salida: {{ s.obj.destino.hora_salida }})
+            </p>
+
+            <hr>
+
+            <p><strong>Pasajeros:</strong> {{ s.cantidad }}</p>
+            <p><strong>Precio por pasajero:</strong> ${{ s.precio }}</p>
+
+            <p><strong>Total ofrecido (origen):</strong> ${{ s.total_origen }}</p>
+            <p><strong>Costo operativo destino:</strong> ${{ s.costo_operativo_destino }}</p>
+
+            <p><strong>Ganancia destino:</strong> ${{ s.ganancia_destino }}</p>
+
+            <p><strong>Gastos administrativos:</strong> ${{ s.gastos_admin }}</p>
+            <p><strong>Comisión del sistema:</strong> ${{ s.comision_sistema }}</p>
+
+            <p><strong>Margen de origen:</strong> ${{ s.margen_origen }}</p>
+            <p><strong>Margen destino:</strong> ${{ s.margen_destino }}</p>
+
+            <hr>
+
+            <h3>💰 Resumen financiero rápido</h3>
+
+            <p><strong>Ganancia cooperativa ORIGEN:</strong> ${{ s.margen_origen }}</p>
+
+            <p><strong>Tu ganancia (DESTINO):</strong>
+                <span style="font-weight:bold;
+                    color:{% if s.ganancia_destino > 15 %}green{% elif s.ganancia_destino > 5 %}orange{% else %}red{% endif %};">
+                    ${{ s.ganancia_destino }}
+                </span>
+            </p>
+
+            <p><strong>Ganancia total del sistema:</strong> 
+                ${{ s.margen_origen|add:s.ganancia_destino }}
+            </p>
+
+            {% if s.ganancia_destino > 15 %}
+                <p style="color:green; font-weight:bold;">✔ Conviene aceptar esta negociación.</p>
+            {% elif s.ganancia_destino > 5 %}
+                <p style="color:orange; font-weight:bold;">⚠ Es aceptable, revisa si tienes asientos disponibles.</p>
+            {% else %}
+                <p style="color:red; font-weight:bold;">✖ No conviene. La ganancia es baja.</p>
+            {% endif %}
+
+            <hr>
+
+            <p><strong>Comentario:</strong> {{ s.obj.comentario_origen }}</p>
+
+            <a href="{% url 'aceptar_negociacion' s.obj.id %}" style="color:green;font-weight:bold;">
+                ✔ Aceptar
+            </a>
+            |
+            <a href="{% url 'rechazar_negociacion' s.obj.id %}" style="color:red;font-weight:bold;">
+                ✖ Rechazar
+            </a>
+
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No hay solicitudes pendientes.</p>
+{% endif %}
