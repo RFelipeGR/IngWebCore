@@ -57,15 +57,25 @@
     </div>
 
     {% for r in reservas %}
-        <label style="display:block; margin-bottom:5px;">
+        <label style="display:block; margin-bottom:5px;
+                    {% if r.transferida %}color:#888;{% endif %}">
+                    
             <input 
                 type="checkbox" 
                 name="reservas" 
                 value="{{ r.id }}" 
-                class="pasajeroCheck">
-            {{ r.nombre_pasajero }} - Asiento {{ r.asiento }}
+                class="pasajeroCheck"
+                {% if r.transferida %}disabled{% endif %}>
+            
+            {% if r.transferida %}
+                🔒 {{ r.nombre_pasajero }} - Asiento {{ r.asiento }} 
+                <span style="color:#b00;"><strong>(TRANSFERIDO)</strong></span>
+            {% else %}
+                {{ r.nombre_pasajero }} - Asiento {{ r.asiento }}
+            {% endif %}
         </label>
     {% endfor %}
+
 
     <h3 style="margin-top:20px;">Seleccionar horario destino:</h3>
 

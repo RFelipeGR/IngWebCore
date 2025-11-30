@@ -22,6 +22,10 @@ urlpatterns = [
     path('negociacion/<int:id>/aceptar/', views.aceptar_negociacion, name='aceptar_negociacion'),
     
     path('negociacion/<int:id>/rechazar/', views.rechazar_negociacion, name='rechazar_negociacion'),
+    
+    path('reactivar/', views.reactivar_pasajeros, name='reactivar_pasajeros'),
+        
+    path('reactivar/<int:id>/', views.reactivar_pasajero_individual, name='reactivar_pasajero'),
 
 
 ]

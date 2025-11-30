@@ -1,0 +1,65 @@
+{% extends "reservas/base.html" %}
+
+{% block content %}
+
+<h2>🔓 Reactivar Pasajeros Transferidos</h2>
+<p>
+    Aquí se muestran los pasajeros que ya fueron transferidos desde buses de tu cooperativa.
+    Solo usuarios con permisos especiales pueden reactivarlos para permitir nuevas transferencias.
+</p>
+
+<!-- Mensajes -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<table class="table table-bordered table-striped align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Pasajero</th>
+            <th>Asiento</th>
+            <th>Horario actual</th>
+            <th>Cooperativa</th>
+            <th>Transferido</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reservas %}
+        <tr>
+            <td>{{ r.nombre_pasajero }}</td>
+            <td>{{ r.asiento }}</td>
+            <td>{{ r.horario }}</td>
+            <td>{{ r.horario.bus.cooperativa.nombre }}</td>
+            <td>
+                {% if r.transferida %}
+                    <span class="badge bg-warning text-dark">TRANSFERIDO</span>
+                {% else %}
+                    <span class="badge bg-success">Activo</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'reactivar_pasajero' r.id %}"
+                   class="btn btn-success btn-sm">
+                    🔓 Reactivar
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center text-muted">
+                No hay pasajeros transferidos para esta cooperativa.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'panel_operador' %}" class="btn btn-secondary">⬅ Volver al panel</a>
+
+{% endblock %}

@@ -11,6 +11,11 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"{self.nombre_pasajero} - Asiento {self.asiento}"
+    
+    class Meta:
+        permissions = [
+            ("can_reactivar", "Puede reactivar pasajeros transferidos"),
+        ]
 
 
 class Negociacion(models.Model):

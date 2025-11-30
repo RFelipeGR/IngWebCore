@@ -8,6 +8,8 @@ from django.contrib import messages
 # Models
 from administracion.models import Operador, Horario
 from reservas.models import Reserva, Negociacion
+from core.models import IncidenteCooperativa
+
 
 # Servicios
 from core.services import (
@@ -43,6 +45,7 @@ from core.services import (
     calcular_costos_negociacion,
     cumple_umbral,
 )
+
 
 # -----------------------------------------------------------
 # 📌 PANEL PRINCIPAL DEL OPERADOR
@@ -105,6 +108,113 @@ def panel_operador(request):
         "data": data,
         "solicitudes": solicitudes_detalladas,
     })
+
+
+
+@login_required
+def reactivar_pasajeros(request):
+    """
+    Lista todas las reservas marcadas como transferidas
+    de la cooperativa del operador actual.
+    """
+    operador = Operador.objects.get(user=request.user)
+    coop = operador.cooperativa
+
+    # Solo reservas transferidas y de la cooperativa del operador
+    reservas = Reserva.objects.filter(
+        transferida=True,
+        horario__bus__cooperativa=coop
+    ).order_by('horario__ruta__origen', 'horario__ruta__destino', 'asiento')
+
+    return render(request, "reservas/reactivar_pasajeros.html", {
+        "reservas": reservas
+    })
+
+
+
+
+@login_required
+def reactivar_pasajero_individual(request, id):
+    operador = Operador.objects.get(user=request.user)
+    coop = operador.cooperativa
+
+    # 🔐 Permiso especial: solo si es staff (puedes cambiar esta condición si luego creas un campo propio)
+    if not request.user.has_perm("reservas.can_reactivar"):
+        messages.error(request, "No tienes permisos para reactivar pasajeros transferidos.")
+        return redirect("reactivar_pasajeros")
+
+
+    reserva = get_object_or_404(
+        Reserva,
+        id=id,
+        horario__bus__cooperativa=coop
+    )
+
+    # 🕒 Verificar si hay algún incidente activo que afecte a este bus / ruta / cooperativa (opcional)
+    incidentes_activos = IncidenteCooperativa.objects.filter(activo=True)
+    incidente_relacionado = None
+    for inc in incidentes_activos:
+        if not inc.esta_activo:
+            continue
+
+        if inc.bus and inc.bus == reserva.horario.bus:
+            incidente_relacionado = inc
+            break
+        if inc.ruta and inc.ruta == reserva.horario.ruta:
+            incidente_relacionado = inc
+            break
+        if inc.cooperativa and inc.cooperativa == coop:
+            incidente_relacionado = inc
+            break
+
+    # Si quieres hacer obligatorio el incidente descomenta esto:
+    # if not incidente_relacionado:
+    #     messages.error(request, "Solo se puede reactivar un pasajero si hay un incidente operativo relacionado.")
+    #     return redirect("reactivar_pasajeros")
+
+    # ✅ Reactivar
+    reserva.transferida = False
+    reserva.save()
+
+    # Mensaje bonito
+    if incidente_relacionado:
+        messages.success(
+            request,
+            f"El pasajero {reserva.nombre_pasajero} ha sido reactivado "
+            f"(incidente: {incidente_relacionado.tipo})."
+        )
+    else:
+        messages.success(
+            request,
+            f"El pasajero {reserva.nombre_pasajero} ha sido reactivado para nuevas transferencias."
+        )
+
+    return redirect("reactivar_pasajeros")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # -----------------------------------------------------------
 # 📌 TRANSFERENCIAS INTERNAS

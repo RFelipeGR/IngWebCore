@@ -1,6 +1,10 @@
 from django.db import models
 from django.conf import settings
 from administracion.models import Horario
+from django.db import models
+from administracion.models import Cooperativa, Bus, Ruta
+
+
 
 class TransferLog(models.Model):
     ESTADOS = (
@@ -47,3 +51,19 @@ class TransferLog(models.Model):
 
     def __str__(self):
         return f"Log transferencia {self.id} - {self.estado}"
+
+
+
+
+class IncidenteCooperativa(models.Model):
+    cooperativa = models.ForeignKey(Cooperativa, on_delete=models.CASCADE, null=True, blank=True)
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, null=True, blank=True)
+    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE, null=True, blank=True)
+
+    descripcion = models.TextField()
+    activo = models.BooleanField(default=True)
+
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Incidente {self.cooperativa} - {self.fecha:%Y-%m-%d}"
