@@ -45,14 +45,33 @@ def cumple_umbral(horario, umbral=30):
 # 3) Buscar rutas alternativas (transferencias)
 # ---------------------------------------------------
 
-def buscar_opciones_transferencia(horario_actual):
+def buscar_opciones_transferencia(horario_actual, cantidad_pasajeros):
     """
-    Busca otros horarios del MISMO día y MISMA ruta,
-    pero en diferente hora.
+    Busca horarios de la misma ruta donde sí haya espacio suficiente
+    para transferir 'cantidad_pasajeros'.
     """
-    return Horario.objects.filter(
+
+    # Todos los horarios de la misma ruta excepto el actual
+    opciones = Horario.objects.filter(
         ruta=horario_actual.ruta
-    ).exclude(id=horario_actual.id).order_by("hora_salida")
+    ).exclude(id=horario_actual.id)
+
+    opciones_filtradas = []
+
+    for h in opciones:
+        ocupacion, usados, capacidad = calcular_ocupacion(h)
+        libres = capacidad - usados
+
+        # Mostrar solo buses donde sí caben los pasajeros
+        if libres >= cantidad_pasajeros:
+            h.ocupacion_porcentaje = round(ocupacion, 2)
+            h.usados = usados
+            h.capacidad = capacidad
+            h.libres = libres
+            opciones_filtradas.append(h)
+
+    return opciones_filtradas
+
 
 
 # ---------------------------------------------------
@@ -61,13 +80,43 @@ def buscar_opciones_transferencia(horario_actual):
 
 def ejecutar_transferencia(reservas, horario_destino):
     """
-    Mueve reservas seleccionadas a otro horario.
+    Transfiere reservas y reasigna asientos sin duplicados.
     """
+
+    # Espacio disponible
+    _, usados, capacidad = calcular_ocupacion(horario_destino)
+    libres = capacidad - usados
+    cantidad = len(reservas)
+
+    if cantidad > libres:
+        return False, f"No se pueden transferir {cantidad} pasajeros. Solo hay {libres} asientos libres."
+
+    # Obtener los asientos ya usados en el destino
+    asientos_ocupados = set(
+        Reserva.objects.filter(horario=horario_destino)
+        .values_list("asiento", flat=True)
+    )
+
+    # Buscar el siguiente asiento disponible
+    def siguiente_asiento_libre():
+        for i in range(1, capacidad + 1):
+            if i not in asientos_ocupados:
+                asientos_ocupados.add(i)
+                return i
+        return None
+
+    # Transferir reasignando asientos únicos
     for r in reservas:
+        nuevo_asiento = siguiente_asiento_libre()
+        if nuevo_asiento is None:
+            return False, "Error inesperado: no se encontró asiento libre."
+
+        r.asiento = nuevo_asiento
         r.horario = horario_destino
         r.save()
 
-    return True
+    return True, "Transferencia realizada correctamente."
+
 
 
 

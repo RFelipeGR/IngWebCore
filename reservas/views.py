@@ -119,7 +119,7 @@ def iniciar_negociacion(request, reserva_id):
         horario__bus__cooperativa=operador.cooperativa
     )
 
-    opciones = buscar_opciones_transferencia(reserva)
+    opciones = buscar_opciones_transferencia(reserva.horario, 1)
 
     return render(request, "reservas/negociacion.html", {
         "reserva": reserva,
@@ -152,19 +152,35 @@ def transferencias(request, id):
     origen = get_object_or_404(Horario, id=id)
     reservas = Reserva.objects.filter(horario=origen).order_by("asiento")
 
+    # Cantidad total de pasajeros del horario origen
+# cargar opciones de la misma ruta SIN filtrar por capacidad todavía
     opciones = Horario.objects.filter(ruta=origen.ruta).exclude(id=origen.id)
+
+    # calcular datos de ocupación para mostrarlos en el select
+    for h in opciones:
+        ocupacion, usados, capacidad = calcular_ocupacion(h)
+        h.libres = capacidad - usados
+        h.capacidad = capacidad
+        h.ocupacion_porcentaje = round(ocupacion, 2)
+
 
     if request.method == "POST":
         seleccionados = request.POST.getlist("reservas")
         destino = get_object_or_404(Horario, id=request.POST.get("destino"))
+        reservas_objs = Reserva.objects.filter(id__in=seleccionados)
 
+        # ✔ MISMA COOPERATIVA → TRANSFERIR DIRECTAMENTE
         if origen.bus.cooperativa == destino.bus.cooperativa:
-            reservas_objs = Reserva.objects.filter(id__in=seleccionados)
-            for r in reservas_objs:
-                r.horario = destino
-                r.save()
+
+            ok, msg = ejecutar_transferencia(reservas_objs, destino)
+
+            if not ok:
+                messages.error(request, msg)
+                return redirect(request.path)
+
             return redirect("panel_operador")
 
+        # ✔ OTRA COOPERATIVA → CREAR NEGOCIACIÓN
         Negociacion.objects.create(
             origen=origen,
             destino=destino,
@@ -181,6 +197,7 @@ def transferencias(request, id):
         "reservas": reservas,
         "opciones": opciones,
     })
+
 
 # -----------------------------------------------------------
 # 📌 DETALLES Y ESTADÍSTICAS

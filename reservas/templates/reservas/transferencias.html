@@ -4,6 +4,11 @@
     {% csrf_token %}
 
     <h3>Seleccione pasajeros a mover:</h3>
+    <div style="margin-bottom:10px;">
+        <button type="button" id="selectAll">Seleccionar todo</button>
+        <button type="button" id="unselectAll">Quitar selección</button>
+    </div>
+
     {% for r in reservas %}
         <label>
             <input type="checkbox" name="reservas" value="{{ r.id }}" class="pasajeroCheck">
@@ -15,8 +20,13 @@
     <select name="destino" id="destinoSelect" required>
         <option value="">Seleccione...</option>
         {% for h in opciones %}
-            <option value="{{ h.id }}" data-coop="{{ h.bus.cooperativa.id }}">
-                {{ h.hora_salida }} - Bus {{ h.bus.placa }} ({{ h.bus.cooperativa.nombre }})
+            <option value="{{ h.id }}" 
+                    data-libres="{{ h.libres }}"
+                    data-coop="{{ h.bus.cooperativa.id }}">
+                {{ h.hora_salida|date:"M d, Y g:i a" }} — 
+                Bus {{ h.bus.placa }} ({{ h.bus.cooperativa.nombre }}) —
+                {{ h.libres }} libres / {{ h.capacidad }} total —
+                Ocupación: {{ h.ocupacion_porcentaje }}%
             </option>
         {% endfor %}
     </select>
@@ -122,6 +132,45 @@ select.addEventListener("change", function() {
     box.style.display = (coopDestino !== coopOrigen) ? "block" : "none";
     calcularEconomia();
 });
+
+function actualizarOpcionesDestino() {
+    const n = document.querySelectorAll(".pasajeroCheck:checked").length;
+    const opciones = document.querySelectorAll("#destinoSelect option");
+
+    opciones.forEach(opt => {
+        if (!opt.dataset.libres) return; // ignorar primer option
+
+        const libres = parseInt(opt.dataset.libres);
+
+        // mostrar solo buses con espacio suficiente
+        opt.hidden = libres < n;
+    });
+}
+
+checkboxes.forEach(cb => cb.addEventListener("change", actualizarOpcionesDestino));
+
+
+
+
+
+const selectAllBtn = document.getElementById("selectAll");
+const unselectAllBtn = document.getElementById("unselectAll");
+
+// Seleccionar todo
+selectAllBtn.addEventListener("click", () => {
+    checkboxes.forEach(cb => cb.checked = true);
+    actualizarOpcionesDestino();
+    calcularEconomia();
+});
+
+// Quitar selección
+unselectAllBtn.addEventListener("click", () => {
+    checkboxes.forEach(cb => cb.checked = false);
+    actualizarOpcionesDestino();
+    calcularEconomia();
+});
+
+
 </script>
 
 <br>
