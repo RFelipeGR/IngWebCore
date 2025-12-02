@@ -1,0 +1,109 @@
+🎯 ¿Qué te recomiendo?
+Para tu caso (reiniciar la base mientras pruebas el sistema de transferencias):
+Usa esta secuencia:
+python manage.py shell
+from reservas.models import Reserva
+Reserva.objects.all().delete()
+
+from reservas.services import generar_reservas_dummy
+generar_reservas_dummy()
+
+print("Reservas borradas y regeneradas exitosamente.")
+
+
+
+
+
+
+ACTIVAR VENV
+venv\Scripts\activate
+python manage.py runserver
+
+
+
+
+
+
+
+
+🟦 1. python manage.py makemigrations
+✔ ¿Qué hace?
+
+Crea archivos de migración basados en cambios que hiciste en tus modelos (models.py).
+
+✔ ¿Cuándo se usa?
+
+Cuando modificas un modelo:
+
+agregar un campo
+
+eliminar un campo
+
+cambiar un tipo de dato
+
+crear una tabla nueva (app nueva)
+
+cambiar opciones de un ForeignKey, etc.
+
+✔ Ejemplo:
+python manage.py makemigrations
+
+
+
+
+
+
+
+🟧 2. python manage.py migrate
+✔ ¿Qué hace?
+
+Aplica las migraciones a la base de datos real (SQLite, PostgreSQL, MySQL…).
+
+✔ ¿Cuándo se usa?
+
+Siempre después de hacer makemigrations.
+
+✔ Ejemplo:
+python manage.py migrate
+
+
+
+
+
+
+
+.
+
+🟪 3. python manage.py showmigrations
+✔ ¿Qué hace?
+
+Muestra todas las migraciones y cuáles están aplicadas ✓ o no están ✗.
+
+✔ ¿Cuándo se usa?
+
+Cuando quieres ver:
+
+si la base está sincronizada
+
+qué migraciones faltan
+
+si algo falló
+
+✔ Ejemplo:
+python manage.py showmigrations
+
+
+
+
+
+
+
+
+
+
+➤ Cuando cambias modelos:
+python manage.py makemigrations
+python manage.py migrate
+
+➤ Cuando quieres ver migraciones aplicadas:
+python manage.py showmigrations
