@@ -1,20 +1,28 @@
 from django.db import models
 from administracion.models import Horario
 
+
 class Reserva(models.Model):
     horario = models.ForeignKey(Horario, on_delete=models.CASCADE)
     nombre_pasajero = models.CharField(max_length=100)
     cedula = models.CharField(max_length=10)
     asiento = models.PositiveIntegerField()
-    # NUEVO: marca si ya fue usada en una transferencia
+    # Marca si ya fue usada en una transferencia
     transferida = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.nombre_pasajero} - Asiento {self.asiento}"
-    
+
     class Meta:
         permissions = [
             ("can_reactivar", "Puede reactivar pasajeros transferidos"),
+        ]
+        # 🚨 NUEVO: no permitir asientos repetidos en el mismo horario
+        constraints = [
+            models.UniqueConstraint(
+                fields=["horario", "asiento"],
+                name="unique_asiento_por_horario",
+            ),
         ]
 
 
@@ -34,7 +42,7 @@ class Negociacion(models.Model):
     comentario_destino = models.TextField(blank=True)
 
     # Estado
-    estado = models.CharField(max_length=20, default='PROPUESTA')  
+    estado = models.CharField(max_length=20, default='PROPUESTA')
     fecha = models.DateTimeField(auto_now_add=True)
 
     # Campo cuando ya se cierra

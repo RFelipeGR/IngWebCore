@@ -7,6 +7,9 @@ from reservas.models import Reserva
 from administracion.models import Horario
 from core.models import TransferLog
 
+from django.core.exceptions import ValidationError  # 👈 NUEVO
+
+
 
 # ----------------------------------------
 # 1) Cálculo de ocupación
@@ -117,13 +120,12 @@ def ejecutar_transferencia(reservas, horario_destino, operador=None):
         detalle = ", ".join(
             f"{r.nombre_pasajero} (Asiento {r.asiento})"
             for r in reservas_transferidas
-        )   
+        )
         return False, (
             "No se puede realizar la transferencia. "
             "Las siguientes reservas ya fueron transferidas previamente: "
             + detalle
         )
-
 
     # ==================================================================
     # 🔥 VALIDACIÓN DE HORARIO DESTINO (no transferir a buses ya salidos)
@@ -154,6 +156,7 @@ def ejecutar_transferencia(reservas, horario_destino, operador=None):
     # 🔥 ASIGNACIÓN DE ASIENTOS EN DESTINO
     # ==================================================================
 
+    # Asientos ya ocupados en el horario destino
     asientos_ocupados = set(
         Reserva.objects.filter(horario=horario_destino)
         .values_list("asiento", flat=True)
@@ -174,6 +177,10 @@ def ejecutar_transferencia(reservas, horario_destino, operador=None):
         nuevo_asiento = siguiente_asiento_libre()
         if nuevo_asiento is None:
             raise ValueError("Error inesperado: no se encontró asiento libre en el bus destino.")
+
+        # 🚨 Validación extra por seguridad (antes de guardar)
+        if Reserva.objects.filter(horario=horario_destino, asiento=nuevo_asiento).exists():
+            raise ValidationError(f"El asiento {nuevo_asiento} ya está ocupado en el horario destino.")
 
         r.asiento = nuevo_asiento
         r.horario = horario_destino
